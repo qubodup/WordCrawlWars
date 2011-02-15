@@ -12,15 +12,15 @@ function Blocks.create()
 	-- the actual blocks.. in the blocks.. in the blocks..? it's a table of x tables of y booleans
 	blcks.blocks = {}
 	-- top position (top is first line)
-	blcks.linepos = {}
+	blcks.linepos = 40
 	return blcks
 end
 
 function Blocks:move()
-	self.linepos = self.linepos + 1
+	self.linepos = self.linepos - 1
 end
 
-function Blocks.collide(otherblocks)
+function Blocks:collide(otherblocks)
 	local collisionExists = false
 	for i,v in ipairs(self.blocks) do
 		if true then collisionExists = true end
@@ -53,7 +53,7 @@ function love.load()
 	timer = {
 		fall = {
 			counter = 0,
-			limit = 8, -- initial game speed so to say
+			limit = 0.8, -- initial game speed so to say
 		},
 	}
 	-- attacker, fixed and falling blocks blocks (ugh..)
@@ -123,7 +123,7 @@ function love.update(dt)
 	if stage == "game" and timer.fall.counter >= timer.fall.limit then
 		timer.fall.counter = timer.fall.counter%timer.fall.limit
 		-- move attacker blocks if they're not high enough
-		if blocksAttacker.linepos < 16 then
+		if blocksAttacker.linepos < 16 then --16 then
 			blocksAttacker:move()
 		end
 		-- put falling blocks in fixed blocks if they are too high
@@ -131,6 +131,7 @@ function love.update(dt)
 			
 		-- move blocks if they're not too hight
 		else
+			blocksAttacker:move()
 			
 		end
 	end
@@ -142,8 +143,8 @@ function love.draw(dt)
 		
 	end
 	if stage == "game" then
-		--pos = {blocksAttack.linepos
-		pos = {x=base.block.size*2,y=love.graphics.getHeight() - base.block.size*7}
+		pos = {x=base.block.size*2,y=blocksAttacker.linepos * base.block.size + base.block.size} 
+		--pos = {x=base.block.size*2,y=love.graphics.getHeight() - base.block.size*7}
 		for i,line in ipairs(blocksAttacker.blocks) do
 			for j,char in ipairs(line) do
 				for k,blockline in ipairs(char) do
