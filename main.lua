@@ -12,7 +12,7 @@ function Blocks.create()
 	-- the actual blocks.. in the blocks.. in the blocks..? it's a table of x tables of y booleans
 	blcks.blocks = {}
 	-- top position (top is first line)
-	blcks.linepos = 40
+	blcks.linepos = 0
 	return blcks
 end
 
@@ -46,7 +46,8 @@ function love.load()
 	-- title means menu or something like that
 	stage = "title"
 	-- tracks keys required to have been pressed for game start
-	keyPressed = { up = false, left = false, right = false}
+	--keyPressed = { up = false, left = false, right = false}
+	keyPressed = { up = true, left = true, right = true}
 	-- blocks that are fixed
 	blocksFixed = {}
 	-- time.. dt.. oh boy..
@@ -58,6 +59,7 @@ function love.load()
 	}
 	-- attacker, fixed and falling blocks blocks (ugh..)
 	blocksAttacker = Blocks.create()
+	blocksAttacker.linepos = base.map.rows + 7
 	blocksFixed = Blocks.create()
 	blocksFalling = Blocks.create()
 end
@@ -123,7 +125,7 @@ function love.update(dt)
 	if stage == "game" and timer.fall.counter >= timer.fall.limit then
 		timer.fall.counter = timer.fall.counter%timer.fall.limit
 		-- move attacker blocks if they're not high enough
-		if blocksAttacker.linepos < 16 then --16 then
+		if blocksAttacker.linepos > base.map.rows - 8 then
 			blocksAttacker:move()
 		end
 		-- put falling blocks in fixed blocks if they are too high
@@ -131,7 +133,6 @@ function love.update(dt)
 			
 		-- move blocks if they're not too hight
 		else
-			blocksAttacker:move()
 			
 		end
 	end
@@ -159,8 +160,8 @@ function love.draw(dt)
 			pos.x = pos.x + (#char[1] + 1)*base.block.size
 			pos.y = pos.y - base.block.size*5
 			end -- char
-			pos.x = base.block.size*2
-			pos.y = pos.y + base.block.size*10
+		pos.x = base.block.size*2
+		pos.y = pos.y + base.block.size*6
 		end -- line
 	end -- if stage is game
 end
