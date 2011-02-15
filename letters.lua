@@ -28,8 +28,9 @@ letters = {
 		{true,  true,  true },
 	},
 	e = {
+		{false, false, false},
 		{true,  true,  true },
-		{true,  false, false},
+		--{true,  false, false},
 		{true,  true , true },
 		{true,  false, false},
 		{true,  true,  true },
@@ -105,10 +106,11 @@ letters = {
 		{true,  true,  true },
 	},
 	p = {
+		{false, false, false},
 		{true,  true,  true },
 		{true,  false, true },
 		{true,  true , true },
-		{true,  false, false},
+		--{true,  false, false},
 		{true,  false, false},
 	},
 	q = {
