@@ -85,11 +85,11 @@ letters = {
 		{true , true },
 	},
 	n = {
-		{},
-		{},
-		{},
-		{},
-		{},
+		{false, false, false},
+		{false, false, false},
+		{true,  true , true },
+		{true,  false, true },
+		{true,  false, true },
 	},
 	m = {
 		{false, false, false, false, false},
