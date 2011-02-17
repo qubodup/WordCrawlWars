@@ -12,12 +12,23 @@ function Blocks.create()
 	-- the actual blocks.. in the block cells.. in the block lines.. it's a table of x tables of y booleans
 	blcks.blocks = {}
 	-- top position (top is first line)
-	blcks.linepos = 0
+	blcks.linepos = 1
 	return blcks
 end
 
 function Blocks:move()
-	self.linepos = self.linepos - 1
+	-- put falling blocks in fixed blocks if they are too high (collide with border or fixed blocks)
+	if  blocksFall.linepos == 1 or blocksFall:collide(blocksFix) then
+		--table.insert(blocksFix.blocks,blocksFall.blocks[1])
+		--table.remove(blocksFall.blocks,1)
+		--if blocksFall.linepos > #blocksFix.blocks then table.insert(blocksFix,{}) end
+		blocksFix:injectBlocks(blocksFall)
+		table.remove(blocksFall.blocks,1)
+		blocksFall.linepos = blocksFall.linepos + 1
+		blocksFall:remTopEmpty()
+	else
+		self.linepos = self.linepos - 1
+	end
 end
 
 function Blocks:makestep(direction)
@@ -29,18 +40,36 @@ function Blocks:makestep(direction)
 		table.insert(self.blocks[1],1,self.blocks[1][#self.blocks[1]])
 		table.remove(self.blocks[1],#self.blocks[1])
 	elseif direction == "up" and self.linepos > 1 then
-		self.linepos = self.linepos - 1
+		self:move()
 		timer.fall.counter = 0
 	end
 end
 
+-- blocksFall:collide(blocksFix)
 function Blocks:collide(otherblocks)
 	local collisionExists = false
-	for i,line in ipairs(self.blocks) do
-		-- line = 1 handled elsewhere
-		if i ~= 1 and otherblocks then collisionExists = true end
+	if self.linepos > 1 and otherblocks.blocks[self.linepos - 1] ~= nil then
+		for i,v in ipairs(self.blocks[1]) do
+			if v and otherblocks.blocks[self.linepos - 1][i] then collisionExists = true end
+		end
 	end
+--debug	if collisionExists then print("colEx",collisionExists) end
 	return collisionExists
+end
+
+-- blocksFix:injectBlocks(blocksFall)
+function Blocks:injectBlocks(otherblocks)
+	if self.blocks[blocksFall.linepos] == nil then table.insert(self.blocks,tableFillFalse({})) end
+	for i,v in ipairs(self.blocks[otherblocks.linepos]) do
+		self.blocks[otherblocks.linepos][i] = v or otherblocks.blocks[1][i]
+	end
+end
+
+function Blocks:remTopEmpty()
+	while blocksFall.blocks[1] ~= nil and tableIsFullOfFalse(blocksFall.blocks[1]) do
+		table.remove(blocksFall.blocks,1)
+		blocksFall.linepos = blocksFall.linepos + 1
+	end
 end
 
 function love.load()
@@ -63,8 +92,6 @@ function love.load()
 	-- tracks keys required to have been pressed for game start
 	--keyPressed = { up = false, left = false, right = false}
 	keyPressed = { up = true, left = true, right = true}
-	-- blocks that are fixed
-	blocksFixed = {}
 	-- time.. dt.. oh boy..
 	timer = {
 		fall = {
@@ -73,17 +100,19 @@ function love.load()
 		},
 	}
 	-- attacker, fixed and falling blocks blocks (ugh..)
-	blocksAttacker = Blocks.create()
-	blocksAttacker.linepos = base.map.maxheight + 7
-	blocksFalling = Blocks.create()
+	blocksAtt = Blocks.create()
+--	blocksAtt.linepos = base.map.maxheight + 7
+	blocksAtt.linepos = math.floor(base.map.maxheight/3)
+	blocksFall = Blocks.create()
 	-- align middle title text
-	blocksFalling.linepos = math.floor(base.map.maxheight / 2)
-	blocksFixed = Blocks.create()
+	blocksFall.linepos = math.floor(base.map.maxheight / 8)
+--	blocksFall.linepos = math.floor(base.map.maxheight / 2)
+	blocksFix = Blocks.create()
 end
 
 function startWar(textfile)
-	blocksAttacker.blocks = text2blocks(file2text(textfile))
-	blocksFalling.blocks = text2blocks(file2text("title.txt"))
+	blocksAtt.blocks = text2blocks(file2text(textfile))
+	blocksFall.blocks = text2blocks(file2text("title.txt"))
 	stage = "game"
 	timer.fall.counter = 0
 end
@@ -157,6 +186,12 @@ function tableFillFalse(tableFalse)
 	return tableFalse
 end
 
+function tableIsFullOfFalse(testtable)
+	local onlyfalse = true
+	for i,v in ipairs(testtable) do if v then onlyfalse = not v end end
+	return onlyfalse
+end
+
 -- character goes in, representing block goes out
 function char2block(char)
 	local block = {}
@@ -176,17 +211,18 @@ function love.update(dt)
 	if stage == "game" and timer.fall.counter >= timer.fall.limit then
 		timer.fall.counter = timer.fall.counter%timer.fall.limit
 		-- move attacker blocks if they're not high enough
-		if blocksAttacker.linepos > base.map.maxheight - 8 then
-			blocksAttacker:move()
+		if blocksAtt.linepos > base.map.maxheight - 8 then
+			blocksAtt:move()
 		end
-		-- put falling blocks in fixed blocks if they are too high (collide with border or fixed blocks
-		if blocksFalling.collide(blocksFixed) or blocksFalling.linepos == 1 then
-			table.insert(blocksFixed,blocksFalling.blocks[1])
-			table.remove(blocksFalling.blocks,1)
-		-- move blocks if they're not too hight
-		else
-			blocksFalling:move()
-		end
+		blocksFall:move()
+	end
+	-- update falling
+	while #blocksAtt.blocks > 0 and #blocksFall.blocks == 0 do
+		table.insert(blocksFall.blocks,blocksAtt.blocks[1])
+		blocksFall.linepos = blocksAtt.linepos
+		table.remove(blocksAtt.blocks,1)
+		blocksAtt.linepos = blocksAtt.linepos + 1
+		blocksFall:remTopEmpty()
 	end
 end
 
@@ -199,9 +235,9 @@ function love.draw(dt)
 		-- attacker blocks
 		local pos = {
 			x = base.block.size * 2,
-			y = blocksAttacker.linepos * base.block.size + base.block.size,
+			y = blocksAtt.linepos * base.block.size + base.block.size,
 		} 
-		for i,bline in ipairs(blocksAttacker.blocks) do
+		for i,bline in ipairs(blocksAtt.blocks) do
 			for j,bcell in ipairs(bline) do
 				colorRandomize("mid")
 				if bcell then love.graphics.rectangle("fill", pos.x, pos.y, base.block.size, base.block.size) end
@@ -212,15 +248,14 @@ function love.draw(dt)
 			pos.x = base.block.size * 2
 			pos.y = pos.y + base.block.size
 		end -- bline
-		-- attacker blocks
+		-- fixed blocks
 		local pos = {
 			x = base.block.size * 2,
-			y = blocksFalling.linepos * base.block.size + base.block.size,
+			y = blocksFix.linepos * base.block.size + base.block.size,
 		} 
-		-- falling blocks
-		for i,bline in ipairs(blocksFalling.blocks) do
+		for i,bline in ipairs(blocksFix.blocks) do
 			for j,bcell in ipairs(bline) do
-				colorRandomize("light")
+				colorRandomize("red")
 				if bcell then love.graphics.rectangle("fill", pos.x, pos.y, base.block.size, base.block.size) end
 				colorRandomize("dark")
 				if not bcell then love.graphics.rectangle("fill", pos.x, pos.y, base.block.size, base.block.size) end
@@ -229,6 +264,29 @@ function love.draw(dt)
 			pos.x = base.block.size * 2
 			pos.y = pos.y + base.block.size
 		end -- bline
+		-- falling blocks
+		local pos = {
+			x = base.block.size * 2,
+			y = blocksFall.linepos * base.block.size + base.block.size,
+		} 
+		for i,bline in ipairs(blocksFall.blocks) do
+			for j,bcell in ipairs(bline) do
+				colorRandomize("light")
+				if bcell then love.graphics.rectangle("fill", pos.x, pos.y, base.block.size, base.block.size) end
+				--colorRandomize("dark")
+				--if not bcell then love.graphics.rectangle("fill", pos.x, pos.y, base.block.size, base.block.size) end
+				pos.x = pos.x + base.block.size
+			end -- bcell
+			pos.x = base.block.size * 2
+			pos.y = pos.y + base.block.size
+		end -- bline
+--debuFixg
+				colorRandomize("red")
+love.graphics.rectangle("fill",0,blocksAtt.linepos, 2,1)
+love.graphics.rectangle("fill",0,blocksFall.linepos,2,1)
+love.graphics.rectangle("fill",0,blocksFix.linepos, 2,1)
+--print(blocksAtt.linepos,blocksFall.linepos,blocksFix.linepos)
+--debug
 	end -- if stage is game
 end
 
@@ -239,7 +297,7 @@ function love.keypressed(key, unicode)
 	end
 	if stage == "game" then
 		if key == "right" or "left" then
-			blocksFalling:makestep(key)
+			blocksFall:makestep(key)
 		end
 	elseif stage == "title" then
 		if key == 'up' or key == 'left' or key == 'right' then
@@ -258,6 +316,8 @@ function colorRandomize(tone)
 		love.graphics.setColor(math.random(100,255),math.random(100,255),math.random(100,255))
 	elseif tone == "dark" then
 		love.graphics.setColor(math.random(50,55),math.random(50,55),math.random(50,55))
+	elseif tone == "red" then
+		love.graphics.setColor(math.random(100,255),math.random(100,155),math.random(100,155))
 	end
 end
 

@@ -4,6 +4,6 @@ function love.conf(t)
 	t.fullscreen = false
 	t.modules.physics = false
 	t.modules.joystick = false
-	t.title = "Undecided"
+	t.title = "Word Crawl Wars"
 	t.author = "Iwan 'qubodup' Gabovitch"
 end
