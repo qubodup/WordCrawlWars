@@ -20,7 +20,7 @@ function Blocks:move()
 	self.linepos = self.linepos - 1
 end
 
-function Blocks:sidestep(direction)
+function Blocks:makestep(direction)
 	if direction == "left" then
 		-- I don't understand why I have to add one
 		table.insert(self.blocks[1],#self.blocks[1]+1,self.blocks[1][1])
@@ -28,6 +28,9 @@ function Blocks:sidestep(direction)
 	elseif direction == "right" then
 		table.insert(self.blocks[1],1,self.blocks[1][#self.blocks[1]])
 		table.remove(self.blocks[1],#self.blocks[1])
+	elseif direction == "up" and self.linepos > 1 then
+		self.linepos = self.linepos - 1
+		timer.fall.counter = 0
 	end
 end
 
@@ -236,7 +239,7 @@ function love.keypressed(key, unicode)
 	end
 	if stage == "game" then
 		if key == "right" or "left" then
-			blocksFalling:sidestep(key)
+			blocksFalling:makestep(key)
 		end
 	elseif stage == "title" then
 		if key == 'up' or key == 'left' or key == 'right' then
