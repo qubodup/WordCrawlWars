@@ -1,4 +1,4 @@
--- WorldCrawlWars Copyright 2011 Iwan 'qubodup' Gabovitch <qubodup@gmail.com>
+-- WordCrawlWars Copyright 2011 Iwan 'qubodup' Gabovitch <qubodup@gmail.com>
 -- Licensed under um... GPL! Ha, take that!
 -- Some game about words, crawl and war I guess
 
