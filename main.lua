@@ -32,16 +32,18 @@ function Blocks:move()
 end
 
 function Blocks:makestep(direction)
-	if direction == "left" then
-		-- I don't understand why I have to add one
-		table.insert(self.blocks[1],#self.blocks[1]+1,self.blocks[1][1])
-		table.remove(self.blocks[1],1)
-	elseif direction == "right" then
-		table.insert(self.blocks[1],1,self.blocks[1][#self.blocks[1]])
-		table.remove(self.blocks[1],#self.blocks[1])
-	elseif direction == "up" and self.linepos > 1 then
-		self:move()
-		timer.fall.counter = 0
+	if self.blocks[1] ~= nil then --debug
+			if direction == "left" then
+				-- I don't understand why I have to add one
+				table.insert(self.blocks[1],#self.blocks[1]+1,self.blocks[1][1])
+				table.remove(self.blocks[1],1)
+			elseif direction == "right" then
+				table.insert(self.blocks[1],1,self.blocks[1][#self.blocks[1]])
+				table.remove(self.blocks[1],#self.blocks[1])
+			elseif direction == "up" and self.linepos > 1 then
+				self:move()
+				timer.fall.counter = 0
+			end
 	end
 end
 
